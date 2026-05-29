@@ -299,33 +299,32 @@ async function runResearch() {
   state.expanded = null;
   render();
 
-  addLog("Initialising research agent…"); await delay(300);
-  addLog("Search window: " + dateRange);
-  state.progress = 15; render(); await delay(300);
-  addLog("Querying The Educator, Campus Review…");
-  state.progress = 30; render(); await delay(300);
-  addLog("Scanning university LinkedIn and newsrooms…");
-  state.progress = 45; render(); await delay(300);
-  addLog("Checking state government infrastructure budgets…");
+  addLog("Initialising research brief…"); await delay(300);
+  addLog("Period: " + dateRange);
+  state.progress = 20; render(); await delay(300);
+  addLog("Building research prompt for " + UNIVERSITIES.length + " universities…");
+  state.progress = 40; render(); await delay(300);
+  addLog("Sending to Claude — compiling from training knowledge…");
   state.progress = 60; render(); await delay(300);
-  addLog("Cross-referencing tender portals…");
-  state.progress = 75; render(); await delay(300);
-  addLog("Sending to Claude with web search…");
+  addLog("Waiting for response (may take 20–40 seconds)…");
+  state.progress = 75; render();
 
-  var prompt = "You are a research analyst specialising in Australian higher education infrastructure.\n\n"
-    + "Search the web and compile a fortnightly newsletter for the period: " + dateRange + ".\n\n"
-    + "Focus ONLY on capital works activity at Australian public universities:\n"
+  var prompt = "You are a research analyst specialising in Australian higher education infrastructure and capital works.\n\n"
+    + "Compile a fortnightly newsletter brief covering the period: " + dateRange + ".\n\n"
+    + "Draw on your training knowledge to report on recent capital works activity at Australian public universities, including:\n"
     + "- Announced or approved capital funding (new buildings, refurbishments, expansions)\n"
     + "- Planning/DA approvals for university buildings\n"
     + "- Construction commencements or completions\n"
     + "- Government grants for university infrastructure\n"
     + "- Master plan updates or strategic facility reviews\n"
     + "- Tender/procurement releases for design and construction\n\n"
-    + "Search: The Educator Australia, Campus Review, university LinkedIn pages and newsrooms, "
+    + "Draw on sources such as: The Educator Australia, Campus Review, university newsrooms, "
     + "state government infrastructure budgets, Infrastructure Australia, Property Council of Australia, "
-    + "ARC grant announcements, tender portals.\n\n"
+    + "ARC grant announcements, and tender portals.\n\n"
     + "Universities to cover: " + UNIVERSITIES.join(", ") + ".\n\n"
-    + "Respond with ONLY a valid JSON object — no markdown, no text outside the JSON. Start with { end with }.\n\n"
+    + "IMPORTANT: Only include items you have reasonable confidence in. Note the source for each item. "
+    + "If you are uncertain about a specific dollar value or date, say so in the summary.\n\n"
+    + "Respond with ONLY a valid JSON object — no markdown, no text outside the JSON. Start with { and end with }.\n\n"
     + "Structure:\n"
     + "{ \"period\": \"string\", \"items\": [ { \"university\": \"name\", \"title\": \"headline\","
     + " \"category\": \"Funding Announced|Construction Update|Planning/DA|Government Grant|Tender/Procurement|Master Plan|Research Facility\","
@@ -335,21 +334,29 @@ async function runResearch() {
     + " \"editorial_note\": \"2-3 sentence summary\" }";
 
   try {
-    var res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey.trim(),
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 4000,
-        tools: [{ type: "web_search_20250305", name: "web_search" }],
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function() { controller.abort(); }, 60000);
+    var res;
+    try {
+      res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey.trim(),
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 4000,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+    if (res && res.type === "aborted") { throw new Error("Request timed out after 60 seconds."); }
 
     if (!res.ok) {
       var errTxt = await res.text();
