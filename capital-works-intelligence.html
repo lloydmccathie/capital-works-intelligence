@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CapWorks" />
+  <title>Capital Works Intelligence</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: Georgia, serif;
+      min-height: 100vh;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    header {
+      background: #0a0f16;
+      border-bottom: 1px solid #1e2936;
+      padding: 16px 16px 12px;
+      padding-top: calc(16px + env(safe-area-inset-top));
+    }
+
+    .logo-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+    .logo-box {
+      width: 38px; height: 38px; flex-shrink: 0;
+      background: linear-gradient(135deg, #0e4d8a, #1a6b3a);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; color: #fff;
+    }
+    .logo-title { font-size: 14px; font-weight: bold; letter-spacing: 0.1em; color: #e8edf2; text-transform: uppercase; }
+    .logo-sub { font-family: monospace; font-size: 9px; color: #5a7a9a; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
+    .date-chip { font-family: monospace; font-size: 10px; color: #5a7a9a; }
+
+    main { padding: 20px 16px; max-width: 700px; margin: 0 auto; }
+
+    /* API KEY SETUP */
+    .setup-box {
+      background: #0f1622; border: 1px solid #2a3a4a;
+      border-radius: 10px; padding: 20px; margin-bottom: 20px;
+    }
+    .setup-title { font-family: monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #e6a82e; margin-bottom: 10px; }
+    .setup-desc { font-size: 12px; color: #8a9ab0; line-height: 1.6; margin-bottom: 14px; }
+    .setup-input {
+      width: 100%; background: #080d14; border: 1px solid #2a3a4a;
+      border-radius: 6px; padding: 10px 12px; color: #c9d1d9;
+      font-family: monospace; font-size: 12px; outline: none;
+      -webkit-appearance: none;
+    }
+    .setup-input:focus { border-color: #0e4d8a; }
+    .setup-save {
+      margin-top: 10px; width: 100%;
+      background: #0e4d8a; color: #fff; border: none;
+      border-radius: 6px; padding: 11px; font-size: 13px;
+      cursor: pointer; font-family: Georgia, serif;
+    }
+    .setup-note { font-family: monospace; font-size: 10px; color: #5a7a9a; margin-top: 8px; line-height: 1.5; }
+
+    /* SCOPE PANEL */
+    .scope-box {
+      background: #0f1622; border: 1px solid #1e2936;
+      border-radius: 10px; padding: 18px; margin-bottom: 20px;
+    }
+    .section-title { font-family: monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #8a9ab0; margin-bottom: 12px; }
+    .source-group { margin-bottom: 12px; }
+    .source-group-label { font-family: monospace; font-size: 10px; font-weight: bold; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+    .chip-sm { font-size: 10px; background: #1a2230; border: 1px solid #2a3a4a; border-radius: 4px; padding: 2px 7px; color: #8a9ab0; }
+
+    /* LAUNCH */
+    .launch-wrap { text-align: center; padding: 8px 0 24px; }
+    .launch-btn {
+      background: linear-gradient(135deg, #0e4d8a, #1a6b3a);
+      color: #fff; border: none; border-radius: 10px;
+      padding: 15px 32px; font-size: 15px;
+      font-family: Georgia, serif; cursor: pointer;
+      width: 100%; max-width: 360px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .launch-note { font-family: monospace; font-size: 10px; color: #5a7a9a; margin-top: 8px; }
+
+    /* LOADING */
+    .load-box {
+      background: #0f1622; border: 1px solid #1e2936;
+      border-radius: 10px; padding: 24px;
+    }
+    .load-top { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .spinner {
+      width: 18px; height: 18px; flex-shrink: 0;
+      border: 2px solid #1e2936; border-top: 2px solid #0e4d8a;
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .prog-track { height: 3px; background: #1e2936; border-radius: 2px; margin-bottom: 16px; overflow: hidden; }
+    .prog-fill { height: 100%; background: linear-gradient(90deg, #0e4d8a, #1a6b3a); border-radius: 2px; transition: width 0.4s ease; }
+    .log-box { background: #080d14; border: 1px solid #1a2230; border-radius: 6px; padding: 12px; max-height: 160px; overflow-y: auto; }
+    .log-line { display: flex; gap: 10px; margin-bottom: 5px; font-family: monospace; font-size: 11px; }
+    .log-time { color: #3a5a7a; min-width: 65px; flex-shrink: 0; }
+    .log-msg { color: #6a9a6a; }
+
+    /* ERROR */
+    .err-box {
+      background: #1a0a0a; border: 1px solid #3a1a1a;
+      border-radius: 10px; padding: 32px 20px; text-align: center;
+    }
+    .err-icon { font-size: 28px; color: #e63b2e; margin-bottom: 10px; }
+    .err-title { font-family: monospace; font-size: 14px; color: #e63b2e; margin-bottom: 8px; }
+    .err-msg { font-family: monospace; font-size: 11px; color: #8a6a6a; margin-bottom: 20px; word-break: break-word; }
+    .retry-btn { background: #1a6b3a; color: #fff; border: none; border-radius: 6px; padding: 10px 24px; font-size: 13px; cursor: pointer; }
+
+    /* RESULTS */
+    .stats-bar {
+      display: flex; align-items: center; gap: 0;
+      background: #0f1622; border: 1px solid #1e2936;
+      border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .stat { flex: 1; min-width: 70px; text-align: center; }
+    .stat-num { font-size: 22px; font-weight: bold; color: #c9d1d9; }
+    .stat-label { font-family: monospace; font-size: 9px; color: #5a7a9a; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .rerun-btn {
+      background: transparent; border: 1px solid #2a3a4a; color: #5a7a9a;
+      border-radius: 6px; padding: 8px 14px; font-size: 11px; cursor: pointer;
+      font-family: monospace; margin-left: auto;
+    }
+
+    .editorial {
+      background: #0a1020; border: 1px solid #1e3a5a;
+      border-left: 3px solid #0e4d8a; border-radius: 0 8px 8px 0;
+      padding: 14px 16px; margin-bottom: 16px;
+    }
+    .editorial-label { font-family: monospace; font-size: 9px; letter-spacing: 0.12em; color: #4a8aaa; text-transform: uppercase; margin-bottom: 6px; }
+    .editorial-text { font-size: 13px; line-height: 1.7; color: #a0aab8; font-style: italic; }
+
+    .filters { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .filter-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .f-btn {
+      background: #0f1622; border: 1px solid #2a3a4a; color: #8a9ab0;
+      border-radius: 5px; padding: 5px 11px; font-size: 10px;
+      cursor: pointer; font-family: monospace;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .f-btn.active { background: #1c2333; border-color: #4a6a9a; color: #c9d1d9; }
+
+    .cards { display: flex; flex-direction: column; gap: 9px; margin-bottom: 32px; }
+    .card {
+      background: #0f1622; border: 1px solid #1e2936;
+      border-radius: 0 8px 8px 0; padding: 13px 14px; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 7px; }
+    .card-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+    .cat-badge { font-family: monospace; font-size: 9px; letter-spacing: 0.05em; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; }
+    .card-uni { font-family: monospace; font-size: 10px; color: #5a7a9a; }
+    .card-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .dollar { font-family: monospace; font-size: 11px; font-weight: bold; color: #1a6b3a; background: rgba(26,107,58,0.1); border: 1px solid rgba(26,107,58,0.3); border-radius: 3px; padding: 2px 6px; }
+    .sig-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .card-title { font-size: 13px; font-weight: bold; color: #c9d1d9; line-height: 1.4; }
+    .card-body { margin-top: 10px; border-top: 1px solid #1e2936; padding-top: 10px; }
+    .card-summary { font-size: 12px; line-height: 1.65; color: #8a9ab0; margin-bottom: 10px; }
+    .card-foot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 7px; }
+    .card-source { font-family: monospace; font-size: 10px; color: #5a7a9a; }
+    .card-source a { color: #4a8aaa; text-decoration: none; }
+    .tag-row { display: flex; flex-wrap: wrap; gap: 4px; }
+    .tag { font-family: monospace; font-size: 9px; background: #1a2230; border: 1px solid #2a3a4a; border-radius: 3px; padding: 2px 5px; color: #5a7a9a; }
+    .hint { font-family: monospace; font-size: 9px; color: #3a5a7a; margin-top: 7px; }
+
+    .empty { text-align: center; color: #5a7a9a; padding: 36px; font-family: monospace; font-size: 12px; }
+
+    footer {
+      border-top: 1px solid #1e2936; padding: 12px 16px;
+      text-align: center; font-family: monospace; font-size: 9px;
+      color: #3a5a7a; letter-spacing: 0.06em;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-row">
+    <div class="logo-box">◈</div>
+    <div>
+      <div class="logo-title">Capital Works Intelligence</div>
+      <div class="logo-sub">Australian University Infrastructure Monitor</div>
+    </div>
+  </div>
+  <div class="date-chip" id="date-range"></div>
+</header>
+
+<main id="app"></main>
+
+<footer>Capital Works Intelligence · Powered by Claude with web search · Refresh fortnightly</footer>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+// Paste your Anthropic API key below (get one at console.anthropic.com)
+// OR enter it in the app's setup screen — it will be saved to this device.
+var HARDCODED_KEY = "";
+// ─────────────────────────────────────────────────────────────────────────────
+
+var UNIVERSITIES = [
+  "University of Melbourne","University of Sydney","Australian National University",
+  "University of Queensland","University of New South Wales","Monash University",
+  "University of Western Australia","University of Adelaide","University of Technology Sydney",
+  "RMIT University","Deakin University","La Trobe University","Griffith University",
+  "Macquarie University","University of Newcastle","University of Wollongong",
+  "Flinders University","James Cook University","Curtin University","QUT",
+  "Swinburne University","Western Sydney University","Charles Darwin University",
+  "University of the Sunshine Coast","Federation University"
+];
+
+var SOURCE_CATEGORIES = [
+  { label: "Sector Media", color: "#1a6b3a", sources: ["The Educator Australia","Campus Review","Universities Australia","Times Higher Education (AU)","The Australian HE supplement"] },
+  { label: "Industry Bodies", color: "#0e4d8a", sources: ["IAU Global","Learning Environments Australia (LEA)","Australian Construction Industry Forum","Infrastructure Australia","Property Council of Australia"] },
+  { label: "Government & Funding", color: "#6b2a0e", sources: ["DESE / Australian Government education announcements","State government capital works budgets","Australian Research Council grants","NABERS / Green Building Council AU"] },
+  { label: "University Channels", color: "#4a1a6b", sources: ["LinkedIn pages (all 25 major unis)","University newsrooms & media centres","University master plan documents","Annual reports & strategic plans"] }
+];
+
+var CAT_COLORS = {
+  "Funding Announced":"#1a6b3a","Construction Update":"#0e4d8a",
+  "Planning/DA":"#8a6b0e","Government Grant":"#6b0e2a",
+  "Tender/Procurement":"#2a6b6b","Master Plan":"#4a1a6b","Research Facility":"#1a4a6b"
+};
+
+var SIG = {
+  High:   { dot:"#e63b2e", label:"High Impact" },
+  Medium: { dot:"#e6a82e", label:"Notable" },
+  Low:    { dot:"#6b7a8d", label:"FYI" }
+};
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+var state = {
+  phase: "idle",        // idle | loading | done | error
+  newsletter: null,
+  error: null,
+  log: [],
+  progress: 0,
+  filter: "All",
+  sigFilter: "All",
+  expanded: null,
+  apiKey: HARDCODED_KEY || localStorage.getItem("cwi_api_key") || ""
+};
+
+function setState(patch) {
+  Object.assign(state, patch);
+  render();
+}
+
+// ─── UTILITIES ───────────────────────────────────────────────────────────────
+function getDateRange() {
+  var now = new Date();
+  var ago = new Date(now);
+  ago.setDate(now.getDate() - 14);
+  var fmt = function(d) { return d.toLocaleDateString("en-AU", { day:"numeric", month:"long", year:"numeric" }); };
+  return fmt(ago) + " to " + fmt(now);
+}
+
+function extractJSON(text) {
+  if (!text) return null;
+  var clean = text.replace(/```json\s*/gi,"").replace(/```\s*/g,"").trim();
+  var start = clean.indexOf("{");
+  var end = clean.lastIndexOf("}");
+  if (start === -1 || end === -1) return null;
+  try { return JSON.parse(clean.slice(start, end+1)); } catch(e) { return null; }
+}
+
+function delay(ms) { return new Promise(function(r){ setTimeout(r,ms); }); }
+
+function addLog(msg) {
+  var t = new Date().toLocaleTimeString("en-AU");
+  state.log = state.log.concat([{ t:t, msg:msg }]);
+  render();
+  // Auto-scroll log
+  var lb = document.getElementById("log-box");
+  if (lb) lb.scrollTop = lb.scrollHeight;
+}
+
+// ─── RESEARCH ────────────────────────────────────────────────────────────────
+async function runResearch() {
+  var apiKey = state.apiKey;
+  if (!apiKey || apiKey.trim() === "") {
+    setState({ phase:"error", error:"No API key set. Tap the key icon at top to enter your Anthropic API key." });
+    return;
+  }
+
+  var dateRange = getDateRange();
+
+  state.phase = "loading";
+  state.newsletter = null;
+  state.error = null;
+  state.log = [];
+  state.progress = 0;
+  state.filter = "All";
+  state.sigFilter = "All";
+  state.expanded = null;
+  render();
+
+  addLog("Initialising research agent…"); await delay(300);
+  addLog("Search window: " + dateRange);
+  state.progress = 15; render(); await delay(300);
+  addLog("Querying The Educator, Campus Review…");
+  state.progress = 30; render(); await delay(300);
+  addLog("Scanning university LinkedIn and newsrooms…");
+  state.progress = 45; render(); await delay(300);
+  addLog("Checking state government infrastructure budgets…");
+  state.progress = 60; render(); await delay(300);
+  addLog("Cross-referencing tender portals…");
+  state.progress = 75; render(); await delay(300);
+  addLog("Sending to Claude with web search…");
+
+  var prompt = "You are a research analyst specialising in Australian higher education infrastructure.\n\n"
+    + "Search the web and compile a fortnightly newsletter for the period: " + dateRange + ".\n\n"
+    + "Focus ONLY on capital works activity at Australian public universities:\n"
+    + "- Announced or approved capital funding (new buildings, refurbishments, expansions)\n"
+    + "- Planning/DA approvals for university buildings\n"
+    + "- Construction commencements or completions\n"
+    + "- Government grants for university infrastructure\n"
+    + "- Master plan updates or strategic facility reviews\n"
+    + "- Tender/procurement releases for design and construction\n\n"
+    + "Search: The Educator Australia, Campus Review, university LinkedIn pages and newsrooms, "
+    + "state government infrastructure budgets, Infrastructure Australia, Property Council of Australia, "
+    + "ARC grant announcements, tender portals.\n\n"
+    + "Universities to cover: " + UNIVERSITIES.join(", ") + ".\n\n"
+    + "Respond with ONLY a valid JSON object — no markdown, no text outside the JSON. Start with { end with }.\n\n"
+    + "Structure:\n"
+    + "{ \"period\": \"string\", \"items\": [ { \"university\": \"name\", \"title\": \"headline\","
+    + " \"category\": \"Funding Announced|Construction Update|Planning/DA|Government Grant|Tender/Procurement|Master Plan|Research Facility\","
+    + " \"summary\": \"2-3 sentences\", \"dollar_value\": \"$XM or null\","
+    + " \"source\": \"name\", \"source_url\": \"url or null\","
+    + " \"significance\": \"High|Medium|Low\", \"tags\": [\"tag\"] } ],"
+    + " \"editorial_note\": \"2-3 sentence summary\" }";
+
+  try {
+    var res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey.trim(),
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4000,
+        tools: [{ type: "web_search_20250305", name: "web_search" }],
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      var errTxt = await res.text();
+      throw new Error("API error " + res.status + ": " + errTxt.slice(0,200));
+    }
+
+    var data = await res.json();
+    addLog("Parsing response…");
+    state.progress = 90; render(); await delay(300);
+
+    if (!data || !Array.isArray(data.content)) {
+      throw new Error("Unexpected response shape");
+    }
+
+    var allText = data.content
+      .filter(function(b){ return b && b.type === "text" && b.text; })
+      .map(function(b){ return b.text; })
+      .join("\n");
+
+    if (!allText.trim()) {
+      throw new Error("No text in response. Stop reason: " + (data.stop_reason || "unknown"));
+    }
+
+    var parsed = extractJSON(allText);
+    if (!parsed) {
+      throw new Error("Could not parse JSON from response");
+    }
+    if (!Array.isArray(parsed.items)) parsed.items = [];
+
+    addLog("Done — " + parsed.items.length + " items compiled");
+    state.progress = 100; render(); await delay(400);
+    setState({ phase:"done", newsletter:parsed });
+
+  } catch(err) {
+    setState({ phase:"error", error: err.message || String(err) });
+    addLog("Error: " + (err.message || String(err)));
+  }
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+var dateRange = getDateRange();
+document.getElementById("date-range").textContent = dateRange;
+
+function render() {
+  var app = document.getElementById("app");
+  if (!app) return;
+
+  var html = "";
+
+  // API key setup banner if no key
+  if (!state.apiKey) {
+    html += '<div class="setup-box">'
+      + '<div class="setup-title">⚠ API Key Required</div>'
+      + '<div class="setup-desc">Enter your Anthropic API key to use this app. Get one free at console.anthropic.com — it starts with <code>sk-ant-</code>. It\'s saved only to this device.</div>'
+      + '<input class="setup-input" id="api-key-input" type="password" placeholder="sk-ant-..." value="" />'
+      + '<button class="setup-save" onclick="saveKey()">Save Key &amp; Continue</button>'
+      + '<div class="setup-note">Your key is stored in your browser\'s local storage and never sent anywhere except directly to Anthropic.</div>'
+      + '</div>';
+  }
+
+  if (state.phase === "idle") {
+    // Source scope
+    html += '<div class="scope-box">';
+    html += '<div class="section-title">Sources Monitored</div>';
+    SOURCE_CATEGORIES.forEach(function(cat) {
+      html += '<div class="source-group">';
+      html += '<div class="source-group-label" style="color:' + cat.color + '">' + cat.label + '</div>';
+      html += '<div class="chips">';
+      cat.sources.forEach(function(s) { html += '<span class="chip-sm">' + s + '</span>'; });
+      html += '</div></div>';
+    });
+    html += '</div>';
+
+    if (state.apiKey) {
+      html += '<div class="launch-wrap">'
+        + '<button class="launch-btn" onclick="runResearch()">⟳ &nbsp;Run Fortnightly Research Brief</button>'
+        + '<div class="launch-note">Powered by Claude with live web search · ~30–60 seconds</div>'
+        + '</div>';
+    }
+  }
+
+  if (state.phase === "loading") {
+    html += '<div class="load-box">'
+      + '<div class="load-top"><div class="spinner"></div><span style="font-family:monospace;font-size:13px;color:#8a9ab0">Mining the internet…</span></div>'
+      + '<div class="prog-track"><div class="prog-fill" style="width:' + state.progress + '%"></div></div>'
+      + '<div class="log-box" id="log-box">';
+    state.log.forEach(function(l) {
+      html += '<div class="log-line"><span class="log-time">' + l.t + '</span><span class="log-msg">' + escHtml(l.msg) + '</span></div>';
+    });
+    html += '</div></div>';
+  }
+
+  if (state.phase === "error") {
+    html += '<div class="err-box">'
+      + '<div class="err-icon">✗</div>'
+      + '<div class="err-title">Research Failed</div>'
+      + '<div class="err-msg">' + escHtml(state.error || "") + '</div>'
+      + '<button class="retry-btn" onclick="runResearch()">Retry</button>'
+      + (state.apiKey ? '' : '') 
+      + '</div>';
+  }
+
+  if (state.phase === "done" && state.newsletter) {
+    var items = state.newsletter.items || [];
+    var highN = items.filter(function(i){ return i.significance === "High"; }).length;
+    var uniSet = {};
+    items.forEach(function(i){ if(i.university) uniSet[i.university] = 1; });
+    var uniCount = Object.keys(uniSet).length;
+
+    html += '<div class="stats-bar">'
+      + '<div class="stat"><div class="stat-num">' + items.length + '</div><div class="stat-label">Items</div></div>'
+      + '<div class="stat"><div class="stat-num" style="color:#e63b2e">' + highN + '</div><div class="stat-label">High Impact</div></div>'
+      + '<div class="stat"><div class="stat-num">' + uniCount + '</div><div class="stat-label">Universities</div></div>'
+      + '<button class="rerun-btn" onclick="runResearch()">⟳ Rerun</button>'
+      + '</div>';
+
+    if (state.newsletter.editorial_note) {
+      html += '<div class="editorial">'
+        + '<div class="editorial-label">Editor\'s Summary</div>'
+        + '<div class="editorial-text">' + escHtml(state.newsletter.editorial_note) + '</div>'
+        + '</div>';
+    }
+
+    // Category filters
+    var cats = ["All"];
+    items.forEach(function(item) { if (item.category && cats.indexOf(item.category) === -1) cats.push(item.category); });
+
+    html += '<div class="filters"><div class="filter-row">';
+    cats.forEach(function(c) {
+      html += '<button class="f-btn' + (state.filter === c ? ' active' : '') + '" onclick="setFilter(' + JSON.stringify(c) + ')">' + escHtml(c) + '</button>';
+    });
+    html += '</div><div class="filter-row">';
+    ["All","High","Medium","Low"].forEach(function(sv) {
+      var label = sv === "All" ? "All Impact" : (SIG[sv] ? SIG[sv].label : sv);
+      html += '<button class="f-btn' + (state.sigFilter === sv ? ' active' : '') + '" onclick="setSig(' + JSON.stringify(sv) + ')">' + label + '</button>';
+    });
+    html += '</div></div>';
+
+    // Cards
+    var rows = items.filter(function(item) {
+      return (state.filter === "All" || item.category === state.filter) &&
+             (state.sigFilter === "All" || item.significance === state.sigFilter);
+    });
+
+    html += '<div class="cards">';
+    if (rows.length === 0) {
+      html += '<div class="empty">No items match these filters.</div>';
+    }
+    rows.forEach(function(item, i) {
+      var realIdx = items.indexOf(item);
+      var open = state.expanded === realIdx;
+      var cc = CAT_COLORS[item.category] || "#2a3a4a";
+      var sg = SIG[item.significance] || SIG.Low;
+      var hasVal = item.dollar_value && item.dollar_value !== "null";
+      var hasUrl = item.source_url && item.source_url !== "null";
+
+      html += '<div class="card" style="border-left:3px solid ' + cc + '" onclick="toggleCard(' + realIdx + ')">';
+      html += '<div class="card-top">'
+        + '<div class="card-meta">'
+        + '<span class="cat-badge" style="background:' + cc + '22;color:' + cc + ';border:1px solid ' + cc + '55">' + escHtml(item.category || "") + '</span>'
+        + '<span class="card-uni">' + escHtml(item.university || "") + '</span>'
+        + '</div>'
+        + '<div class="card-right">'
+        + (hasVal ? '<span class="dollar">' + escHtml(item.dollar_value) + '</span>' : '')
+        + '<span class="sig-dot" style="background:' + sg.dot + '"></span>'
+        + '</div></div>';
+      html += '<div class="card-title">' + escHtml(item.title || "") + '</div>';
+
+      if (open) {
+        html += '<div class="card-body">'
+          + '<div class="card-summary">' + escHtml(item.summary || "") + '</div>'
+          + '<div class="card-foot">'
+          + '<span class="card-source">' + (hasUrl ? '<a href="' + escAttr(item.source_url) + '" target="_blank" rel="noopener">' + escHtml(item.source || "") + ' ↗</a>' : escHtml(item.source || "")) + '</span>'
+          + '<div class="tag-row">' + (item.tags || []).map(function(t){ return '<span class="tag">' + escHtml(t) + '</span>'; }).join("") + '</div>'
+          + '</div></div>';
+      }
+
+      html += '<div class="hint">' + (open ? "▲ Collapse" : "▼ Read more") + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  app.innerHTML = html;
+
+  // Restore API key input if shown
+  if (!state.apiKey) {
+    var inp = document.getElementById("api-key-input");
+    if (inp) inp.focus();
+  }
+
+  // Re-scroll log
+  var lb = document.getElementById("log-box");
+  if (lb) lb.scrollTop = lb.scrollHeight;
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────────────────────────
+function saveKey() {
+  var inp = document.getElementById("api-key-input");
+  if (!inp) return;
+  var key = inp.value.trim();
+  if (!key) { alert("Please enter your API key."); return; }
+  localStorage.setItem("cwi_api_key", key);
+  setState({ apiKey: key, phase: "idle" });
+}
+
+function setFilter(c) { setState({ filter: c, expanded: null }); }
+function setSig(s) { setState({ sigFilter: s, expanded: null }); }
+function toggleCard(i) { setState({ expanded: state.expanded === i ? null : i }); }
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function escAttr(str) { return String(str).replace(/"/g,"&quot;"); }
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
